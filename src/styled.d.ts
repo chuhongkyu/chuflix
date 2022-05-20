@@ -1,16 +1,16 @@
-// import original module declarations
-import 'styled-components';
+import "styled-components";
 
-// and extend them!
-declare module 'styled-components' {
+declare module "styled-components" {
   export interface DefaultTheme {
-    bgColor: string;
-    textColor: string;
-    cloudColor: string;
-    accentColor: string;
-    whiteColor: string;
-    inputStyle: string;
-    clickedStyle: string;
-    boxShadow: string;
-    }
+    red: string;
+    black: {
+      veryDark: string;
+      darker: string;
+      lighter: string;
+    };
+    white: {
+      darker: string;
+      lighter: string;
+    };
   }
+}

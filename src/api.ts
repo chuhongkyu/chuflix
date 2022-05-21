@@ -22,8 +22,29 @@ export interface IGetMoviesResult {
   total_results: number;
 }
 
+interface ITv {
+  backdrop_path: string;
+  poster_path: string;
+  id: number;
+  name: string;
+  overview: string;
+}
+
+export interface ITvResult {
+  page: number;
+  results: ITv[];
+  total_pages: number;
+  total_results: number;
+}
+
 export function getMovies() {
   return fetch(`${BASE_PATH}movie/now_playing?api_key=${API_KEY}`).then(
+    (response) => response.json()
+  );
+}
+
+export function getTv() {
+  return fetch(`${BASE_PATH}tv/airing_today?api_key=${API_KEY}`).then(
     (response) => response.json()
   );
 }

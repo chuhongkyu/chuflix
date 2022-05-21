@@ -10,7 +10,7 @@ import MovieHover from "../Components/MovieHover";
 import { useMatch, useNavigate } from "react-router-dom";
 
 const Wrapper = styled.div`
-  background-color: ${(props) => props.theme.black.darker};
+  background-color: ${(props) => props.theme.black.veryDark};
   height: 200vh;
   overflow-x: hidden;
 `;
@@ -34,16 +34,47 @@ const Banner = styled.div<{ bgPhoto: string }>`
 const Title = styled.h2`
   font-size: 68px;
   margin-bottom: 15px;
+  font-weight: 800;
+`;
+
+const MovieDetail = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  h2 {
+    font-size: 20px;
+  }
+`;
+
+const TopIcon = styled.div`
+  padding: 5px 10px;
+  background-color: red;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+  margin-right: 10px;
+  span {
+    font-size: 15px;
+  }
 `;
 
 const Overview = styled.p`
-  font-size: 36px;
+  margin-top: 10px;
+  font-size: 20px;
+  color: ${(props) => props.theme.white.darker};
   width: 50%;
+  opacity: 0.8;
 `;
 
 const Slider = styled.div`
   position: relative;
+  margin-left: 60px;
   top: -100px;
+  h1 {
+    margin-bottom: 10px;
+    font-size: 25px;
+  }
 `;
 
 const Row = styled(motion.div)`
@@ -219,7 +250,7 @@ function Home() {
     data?.results.find(
       (movie) => movie.id + "" === bigMovieMatch.params.movieId
     );
-  console.log(clickedMovie);
+
   return (
     <Wrapper>
       {isLoading ? (
@@ -232,9 +263,17 @@ function Home() {
             bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
           >
             <Title>{data?.results[0].title}</Title>
+            <MovieDetail>
+              <TopIcon>
+                <span>TOP 20</span>
+              </TopIcon>
+              <h2>Now Playing</h2>
+            </MovieDetail>
             <Overview>{data?.results[0].overview}</Overview>
           </Banner>
+
           <Slider>
+            <h1>TOP 20</h1>
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row
                 variants={rowVariant}
@@ -274,6 +313,7 @@ function Home() {
               </Row>
             </AnimatePresence>
           </Slider>
+
           <AnimatePresence>
             {bigMovieMatch ? (
               <>

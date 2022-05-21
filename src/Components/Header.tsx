@@ -14,6 +14,7 @@ const Nav = styled(motion.nav)`
   font-size: 14px;
   color: white;
   padding: 10px 60px;
+  z-index: 3;
 `;
 
 const Col = styled.div`
@@ -115,13 +116,14 @@ function Header() {
     setSerachOpen((prev) => !prev);
   };
   useEffect(() => {
-    scrollY.onChange(() => console.log(scrollY.get()));
-    if (scrollY.get() > 80) {
-      navAnimation.start("scroll");
-    } else {
-      navAnimation.start("top");
-    }
-  }, [scrollY]);
+    scrollY.onChange(() => {
+      if (scrollY.get() > 80) {
+        navAnimation.start("scroll");
+      } else {
+        navAnimation.start("top");
+      }
+    });
+  }, [scrollY, navAnimation]);
 
   return (
     <Nav variants={navVariants} animate={navAnimation} initial={"top"}>

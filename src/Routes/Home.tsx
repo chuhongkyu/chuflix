@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useViewportScroll } from "framer-motion";
 import { useState } from "react";
 import { useQuery } from "react-query";
 import styled from "styled-components";
@@ -6,10 +6,13 @@ import { getMovies, IGetMoviesResult } from "../api";
 import Header from "../Components/Header";
 import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
+import MovieHover from "../Components/MovieHover";
+import { useMatch, useNavigate } from "react-router-dom";
 
 const Wrapper = styled.div`
   background-color: ${(props) => props.theme.black.darker};
   height: 200vh;
+  overflow-x: hidden;
 `;
 
 const Banner = styled.div<{ bgPhoto: string }>`
@@ -57,11 +60,96 @@ const Movie = styled(motion.div)<{ bgPhoto: string }>`
   background-position: center center;
   background-repeat: no-repeat;
   height: 200px;
+  position: relative;
+  cursor: pointer;
   &:first-child {
     transform-origin: center left;
   }
   &:last-child {
     transform-origin: center right;
+  }
+`;
+
+const Info = styled(motion.div)`
+  padding: 20px;
+  background-color: ${(props) => props.theme.black.lighter};
+  opacity: 0;
+  position: absolute;
+  bottom: -100px;
+  width: 100%;
+  height: 100px;
+`;
+
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  z-index: 5;
+`;
+
+const ModalMovie = styled(motion.div)`
+  position: absolute;
+  width: 40vw;
+  height: 80vh;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  background-color: ${(props) => props.theme.black.lighter};
+  overflow: hidden;
+  border-radius: 15px;
+  z-index: 5;
+  hr {
+    margin: 0px 10px;
+  }
+`;
+
+const ModalCover = styled.div`
+  width: 100%;
+  height: 400px;
+  background-size: cover;
+  background-position: center center;
+  position: relative;
+`;
+
+const ModalTitle = styled.h3`
+  color: ${(props) => props.theme.white.lighter};
+  font-size: 25px;
+  margin: 30px 10px 10px 20px;
+`;
+
+const ModalOverview = styled.p`
+  color: ${(props) => props.theme.white.lighter};
+  margin: 0px 10px 10px 20px;
+`;
+
+const ModalBtn = styled.span`
+  color: ${(props) => props.theme.white.lighter};
+  padding: 10px 50px;
+  border-radius: 5px;
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  background-color: red;
+`;
+
+const ModalCloseBtn = styled.span`
+  color: ${(props) => props.theme.white.darker};
+  padding: 5px 7px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid ${(props) => props.theme.white.darker};
+  border-radius: 50%;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  &:hover {
+    background-color: white;
+    color: ${(props) => props.theme.black.lighter};
+    transition: 0.5s;
   }
 `;
 
@@ -83,17 +171,27 @@ const movieVariants = {
   },
   hover: {
     scale: 1.3,
-    y: -50,
+    y: -80,
+    zIndex: 2,
     transition: {
-      delay: 0.3,
+      delay: 0.1,
       type: "tween",
     },
+  },
+};
+
+const infoVariants = {
+  hover: {
+    opacity: 1,
   },
 };
 
 const offset = 6;
 
 function Home() {
+  const navigate = useNavigate();
+  const bigMovieMatch = useMatch("/movies/:movieId");
+  const { scrollY } = useViewportScroll();
   const { data, isLoading } = useQuery<IGetMoviesResult>(
     ["moviex", "nowPlaying"],
     getMovies
@@ -110,6 +208,18 @@ function Home() {
     }
   };
   const toggleLeaving = () => setLeaving((prev) => !prev);
+  const onMovieClicked = (movieId: number) => {
+    navigate(`/movies/${movieId}`);
+  };
+  const onOverlayClick = () => {
+    navigate("/");
+  };
+  const clickedMovie =
+    bigMovieMatch?.params.movieId &&
+    data?.results.find(
+      (movie) => movie.id + "" === bigMovieMatch.params.movieId
+    );
+  console.log(clickedMovie);
   return (
     <Wrapper>
       {isLoading ? (
@@ -139,17 +249,71 @@ function Home() {
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Movie
+                      layoutId={movie.id + ""}
                       key={movie.id}
                       whileHover="hover"
                       initial="normal"
                       variants={movieVariants}
                       transition={{ type: "tween" }}
-                      bgPhoto={makeImagePath(movie.backdrop_path, "w400")}
-                    ></Movie>
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
+                      onClick={() => onMovieClicked(movie.id)}
+                    >
+                      <Info variants={infoVariants}>
+                        <MovieHover
+                          title={
+                            movie.title.length < 20
+                              ? movie.title
+                              : movie.title.substring(0, 20) + "..."
+                          }
+                          date={movie.release_date.substring(0, 4)}
+                          adult={movie.adult}
+                        />
+                      </Info>
+                    </Movie>
                   ))}
               </Row>
             </AnimatePresence>
           </Slider>
+          <AnimatePresence>
+            {bigMovieMatch ? (
+              <>
+                <Overlay
+                  onClick={onOverlayClick}
+                  exit={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
+                <ModalMovie
+                  layoutId={bigMovieMatch.params.movieId}
+                  style={{ top: scrollY.get() + 100 }}
+                >
+                  {clickedMovie && (
+                    <>
+                      <ModalCover
+                        style={{
+                          backgroundImage: `url(${makeImagePath(
+                            clickedMovie.backdrop_path,
+                            "w500"
+                          )})`,
+                        }}
+                      >
+                        <ModalBtn>▶️ Play</ModalBtn>
+                        <ModalCloseBtn onClick={onOverlayClick}>
+                          ✖️
+                        </ModalCloseBtn>
+                      </ModalCover>
+                      <ModalTitle>{clickedMovie.title}</ModalTitle>
+                      <ModalOverview>
+                        {clickedMovie.overview.length < 300
+                          ? clickedMovie.overview
+                          : clickedMovie.overview.substring(0, 300) + "..."}
+                      </ModalOverview>
+                      <hr />
+                    </>
+                  )}
+                </ModalMovie>
+              </>
+            ) : null}
+          </AnimatePresence>
         </>
       )}
     </Wrapper>

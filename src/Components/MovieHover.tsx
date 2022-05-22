@@ -35,9 +35,11 @@ const Title = styled.div`
   justify-content: flex-start;
   align-items: center;
   color: white;
+  font-size: 11px;
   h2:first-child {
     color: #19a419;
     margin-right: 5px;
+    font-size: 11px;
   }
 `;
 

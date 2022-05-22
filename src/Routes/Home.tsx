@@ -1,8 +1,14 @@
 import { motion, AnimatePresence, useViewportScroll } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import styled from "styled-components";
-import { getMovies, IGetMoviesResult } from "../api";
+import {
+  getMovies,
+  getTopRatedM,
+  getUpComingM,
+  IGetMoviesResult,
+  IMovie,
+} from "../api";
 import Header from "../Components/Header";
 import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
@@ -71,6 +77,7 @@ const Slider = styled.div`
   position: relative;
   margin-left: 60px;
   top: -100px;
+  height: 300px;
   h1 {
     margin-bottom: 10px;
     font-size: 25px;
@@ -223,17 +230,21 @@ function Home() {
   const navigate = useNavigate();
   const bigMovieMatch = useMatch("/movies/:movieId");
   const { scrollY } = useViewportScroll();
-  const { data, isLoading } = useQuery<IGetMoviesResult>(
-    ["moviex", "nowPlaying"],
-    getMovies
-  );
+
+  const { data: nowPlayingData, isLoading: nowPlayingLoading } =
+    useQuery<IGetMoviesResult>(["movie", "nowPlaying"], getMovies);
+  const { data: topRatedData, isLoading: topRatedLoading } =
+    useQuery<IGetMoviesResult>(["movie", "topRated"], getTopRatedM);
+  const { data: upcomingData, isLoading: upcomingLoading } =
+    useQuery<IGetMoviesResult>(["movie", "upcoming"], getUpComingM);
+
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const increaseIndex = () => {
-    if (data) {
+    if (nowPlayingData) {
       if (leaving) return;
       toggleLeaving();
-      const totalMovies = data?.results.length - 1;
+      const totalMovies = nowPlayingData?.results.length - 1;
       const maxIndex = Math.floor(totalMovies / offset) - 1;
       setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
     }
@@ -247,33 +258,45 @@ function Home() {
   };
   const clickedMovie =
     bigMovieMatch?.params.movieId &&
-    data?.results.find(
+    nowPlayingData?.results.find(
+      (movie) => movie.id + "" === bigMovieMatch.params.movieId
+    );
+  const clickedTopMovie =
+    bigMovieMatch?.params.movieId &&
+    topRatedData?.results.find(
+      (movie) => movie.id + "" === bigMovieMatch.params.movieId
+    );
+  const clickedUpComMovie =
+    bigMovieMatch?.params.movieId &&
+    upcomingData?.results.find(
       (movie) => movie.id + "" === bigMovieMatch.params.movieId
     );
 
   return (
     <Wrapper>
-      {isLoading ? (
+      {nowPlayingLoading || topRatedLoading || upcomingLoading ? (
         <Loader></Loader>
       ) : (
         <>
           <Header></Header>
           <Banner
             onClick={increaseIndex}
-            bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}
+            bgPhoto={makeImagePath(
+              nowPlayingData?.results[0].backdrop_path || ""
+            )}
           >
-            <Title>{data?.results[0].title}</Title>
+            <Title>{nowPlayingData?.results[0].title}</Title>
             <MovieDetail>
               <TopIcon>
                 <span>TOP 20</span>
               </TopIcon>
               <h2>Now Playing</h2>
             </MovieDetail>
-            <Overview>{data?.results[0].overview}</Overview>
+            <Overview>{nowPlayingData?.results[0].overview}</Overview>
           </Banner>
 
           <Slider>
-            <h1>TOP 20</h1>
+            <h1>Now Playing</h1>
             <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row
                 variants={rowVariant}
@@ -283,7 +306,7 @@ function Home() {
                 transition={{ type: "tween", duration: 1 }}
                 key={index}
               >
-                {data?.results
+                {nowPlayingData?.results
                   .slice(1)
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
@@ -346,6 +369,173 @@ function Home() {
                         {clickedMovie.overview.length < 300
                           ? clickedMovie.overview
                           : clickedMovie.overview.substring(0, 300) + "..."}
+                      </ModalOverview>
+                      <hr />
+                    </>
+                  )}
+                </ModalMovie>
+              </>
+            ) : null}
+          </AnimatePresence>
+
+          <Slider>
+            <h1>Top Rated</h1>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+              <Row
+                variants={rowVariant}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ type: "tween", duration: 1 }}
+                key={index}
+              >
+                {topRatedData?.results
+                  .slice(1)
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Movie
+                      layoutId={movie.id + ""}
+                      key={movie.id}
+                      whileHover="hover"
+                      initial="normal"
+                      variants={movieVariants}
+                      transition={{ type: "tween" }}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
+                      onClick={() => onMovieClicked(movie.id)}
+                    >
+                      <Info variants={infoVariants}>
+                        <MovieHover
+                          title={
+                            movie.title.length < 20
+                              ? movie.title
+                              : movie.title.substring(0, 20) + "..."
+                          }
+                          date={movie.release_date.substring(0, 4)}
+                          adult={movie.adult}
+                        />
+                      </Info>
+                    </Movie>
+                  ))}
+              </Row>
+            </AnimatePresence>
+          </Slider>
+
+          <AnimatePresence>
+            {bigMovieMatch ? (
+              <>
+                <Overlay
+                  onClick={onOverlayClick}
+                  exit={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
+                <ModalMovie
+                  layoutId={bigMovieMatch.params.movieId}
+                  style={{ top: scrollY.get() + 100 }}
+                >
+                  {clickedTopMovie && (
+                    <>
+                      <ModalCover
+                        style={{
+                          backgroundImage: `url(${makeImagePath(
+                            clickedTopMovie.backdrop_path,
+                            "w500"
+                          )})`,
+                        }}
+                      >
+                        <ModalBtn>▶️ Play</ModalBtn>
+                        <ModalCloseBtn onClick={onOverlayClick}>
+                          ✖️
+                        </ModalCloseBtn>
+                      </ModalCover>
+                      <ModalTitle>{clickedTopMovie.title}</ModalTitle>
+                      <ModalOverview>
+                        {clickedTopMovie.overview.length < 300
+                          ? clickedTopMovie.overview
+                          : clickedTopMovie.overview.substring(0, 300) + "..."}
+                      </ModalOverview>
+                      <hr />
+                    </>
+                  )}
+                </ModalMovie>
+              </>
+            ) : null}
+          </AnimatePresence>
+
+          <Slider>
+            <h1>Up Coming</h1>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+              <Row
+                variants={rowVariant}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{ type: "tween", duration: 1 }}
+                key={index}
+              >
+                {upcomingData?.results
+                  .slice(1)
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Movie
+                      layoutId={movie.id + ""}
+                      key={movie.id}
+                      whileHover="hover"
+                      initial="normal"
+                      variants={movieVariants}
+                      transition={{ type: "tween" }}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
+                      onClick={() => onMovieClicked(movie.id)}
+                    >
+                      <Info variants={infoVariants}>
+                        <MovieHover
+                          title={
+                            movie.title.length < 20
+                              ? movie.title
+                              : movie.title.substring(0, 20) + "..."
+                          }
+                          date={movie.release_date.substring(0, 4)}
+                          adult={movie.adult}
+                        />
+                      </Info>
+                    </Movie>
+                  ))}
+              </Row>
+            </AnimatePresence>
+          </Slider>
+
+          <AnimatePresence>
+            {bigMovieMatch ? (
+              <>
+                <Overlay
+                  onClick={onOverlayClick}
+                  exit={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                />
+                <ModalMovie
+                  layoutId={bigMovieMatch.params.movieId}
+                  style={{ top: scrollY.get() + 100 }}
+                >
+                  {clickedUpComMovie && (
+                    <>
+                      <ModalCover
+                        style={{
+                          backgroundImage: `url(${makeImagePath(
+                            clickedUpComMovie.backdrop_path,
+                            "w500"
+                          )})`,
+                        }}
+                      >
+                        <ModalBtn>▶️ Play</ModalBtn>
+                        <ModalCloseBtn onClick={onOverlayClick}>
+                          ✖️
+                        </ModalCloseBtn>
+                      </ModalCover>
+                      <ModalTitle>{clickedUpComMovie.title}</ModalTitle>
+                      <ModalOverview>
+                        {clickedUpComMovie.overview.length < 300
+                          ? clickedUpComMovie.overview
+                          : clickedUpComMovie.overview.substring(0, 300) +
+                            "..."}
                       </ModalOverview>
                       <hr />
                     </>

@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import { motion, useAnimation, useViewportScroll } from "framer-motion";
-import { Link, useMatch } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 const Nav = styled(motion.nav)`
   display: flex;
@@ -41,18 +42,20 @@ const Item = styled.li`
   display: flex;
   justify-content: center;
   flex-direction: column;
+  cursor: pointer;
   &:hover {
     color: ${(props) => props.theme.white.lighter};
   }
 `;
 
-const Search = styled.span`
+const Search = styled.form`
   position: relative;
   color: white;
   display: flex;
   align-items: center;
   svg {
     height: 25px;
+    cursor: pointer;
   }
 `;
 
@@ -77,6 +80,7 @@ const Input = styled(motion.input)`
   background-color: transparent;
   border: 1px solid ${(props) => props.theme.white.lighter};
   z-index: -1;
+  color: ${(props) => props.theme.white.lighter};
 `;
 
 const logoVariants = {
@@ -98,10 +102,16 @@ const navVariants = {
   },
 };
 
+interface IForm {
+  keyword: string;
+}
+
 function Header() {
   const [searchOpen, setSerachOpen] = useState(false);
   const homeMatch = useMatch("/");
   const tvMatch = useMatch("/tv");
+  const searchMatch = useMatch("/search");
+  const enterMatch = useMatch("/enter");
   const inputAnimation = useAnimation();
   const navAnimation = useAnimation();
   const { scrollY } = useViewportScroll();
@@ -124,6 +134,13 @@ function Header() {
       }
     });
   }, [scrollY, navAnimation]);
+
+  const navigate = useNavigate();
+  const { register, handleSubmit } = useForm<IForm>();
+  const onValid = (data: IForm) => {
+    // console.log(data);
+    navigate(`/search?keyword=${data.keyword}`);
+  };
 
   return (
     <Nav variants={navVariants} animate={navAnimation} initial={"top"}>
@@ -156,13 +173,23 @@ function Header() {
               Tv shows{tvMatch && <LineNav layoutId="lineNav" />}
             </Link>
           </Item>
-          <Item>Movies</Item>
-          <Item>New&Popular</Item>
+          <Item
+            onClick={() => {
+              navigate(`/search?keyword=dune`);
+            }}
+          >
+            Search{searchMatch && <LineNav layoutId="lineNav" />}
+          </Item>
+          <Item>
+            <Link to="/enter">
+              Enter{enterMatch && <LineNav layoutId="lineNav" />}
+            </Link>
+          </Item>
           <Item>My List</Item>
         </Items>
       </Col>
       <Col>
-        <Search>
+        <Search onSubmit={handleSubmit(onValid)}>
           <motion.svg
             onClick={toggleSearch}
             animate={{ x: searchOpen ? -180 : 0 }}
@@ -178,6 +205,7 @@ function Header() {
             ></path>
           </motion.svg>
           <Input
+            {...register("keyword", { required: true, minLength: 2 })}
             animate={inputAnimation}
             initial={{ scaleX: 0 }}
             transition={{ type: "linear" }}

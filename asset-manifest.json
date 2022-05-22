@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/chuflix/static/js/main.1b410c42.js",
+    "index.html": "/chuflix/index.html",
+    "main.1b410c42.js.map": "/chuflix/static/js/main.1b410c42.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.1b410c42.js"
+  ]
+}

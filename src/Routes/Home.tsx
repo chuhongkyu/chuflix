@@ -13,6 +13,7 @@ import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
 import MovieHover from "../Components/MovieHover";
 import { useMatch, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 const Wrapper = styled.div`
   background-color: ${(props) => props.theme.black.veryDark};
@@ -278,6 +279,9 @@ function Home() {
       ) : (
         <>
           <Header></Header>
+          <Helmet>
+            <title>NEFLIX Movie</title>
+          </Helmet>
           <Banner
             onClick={increaseIndex}
             bgPhoto={makeImagePath(

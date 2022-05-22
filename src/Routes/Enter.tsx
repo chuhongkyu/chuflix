@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Helmet } from "react-helmet";
 import { useQuery } from "react-query";
 import styled from "styled-components";
 import { getMovies } from "../api";
@@ -30,6 +31,9 @@ function Enter() {
         <Loader />
       ) : (
         <Wrapper>
+          <Helmet>
+            <title>Enter</title>
+          </Helmet>
           <Banner>
             <Svg
               xmlns="http://www.w3.org/2000/svg"

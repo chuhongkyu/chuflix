@@ -14,6 +14,7 @@ import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
 import { useMatch, useNavigate } from "react-router-dom";
 import MovieHover from "../Components/MovieHover";
+import { Helmet } from "react-helmet";
 
 const Wrapper = styled.div`
   background-color: ${(props) => props.theme.black.veryDark};
@@ -290,6 +291,9 @@ function Tv() {
       ) : (
         <>
           <Header></Header>
+          <Helmet>
+            <title>NEFLIX TV</title>
+          </Helmet>
           <Banner
             onClick={increaseIndex}
             bgPhoto={makeImagePath(lastestData?.results[0].backdrop_path || "")}

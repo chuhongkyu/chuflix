@@ -8,6 +8,7 @@ import { makeImagePath } from "../Utils/utils";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
+import { Helmet } from "react-helmet";
 
 const Wrapper = styled.div`
   background-color: ${(props) => props.theme.black.veryDark};
@@ -159,6 +160,9 @@ function Search() {
       ) : (
         <>
           <Header></Header>
+          <Helmet>
+            <title>{data?.results[0].original_title.substring(0, 10)}</title>
+          </Helmet>
           <Banner
             onClick={increaseIndex}
             bgPhoto={makeImagePath(data?.results[0].backdrop_path || "")}

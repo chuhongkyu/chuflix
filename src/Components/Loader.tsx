@@ -13,11 +13,12 @@ const Logo = styled(motion.svg)``;
 
 const logoVariants = {
   initial: {
-    fillOpacity: 0,
+    pathLength: 0,
+    fill: "rgba(216, 31, 38, 0)",
   },
-  exit: {
-    fillOpacity: 1,
-    transition: {},
+  animate: {
+    pathLength: 1,
+    fill: "rgba(216, 31, 38, 1)",
   },
 };
 
@@ -27,11 +28,12 @@ function Loader() {
       <Logo
         variants={logoVariants}
         initial="inital"
-        exit="exit"
+        animate="animate"
+        transition={{ duration: 5 }}
         width="222px"
         height="222px"
         strokeWidth="2"
-        stroke="red"
+        stroke="rgba(216, 31, 38, 1)"
         viewBox="-49.6 0 222 222"
         id="svg2"
         xmlns="http://www.w3.org/2000/svg"
@@ -66,11 +68,11 @@ function Loader() {
                 <stop offset="0" />
                 <stop offset="1" stop-opacity="0" />
               </radialGradient>
-              <path
+              <motion.path
                 id="path5719"
                 d="M-322-412.8v213.2l150.2 398.4c0-9.1 0-14.1.1-24.5l.3-160.9 11.9 33.6C-93.5 234.2-58 334.6-57.8 334.8c.1.1 10.1.7 22.2 1.3 36.6 1.8 82 5.7 116.5 10 8 1 14.8 1.5 15.3 1.1.3-.3.5-84.1.5-202.4L-52.7-285l-.1 40.7-.3 168-13.8-39c-13.5-38.1-22.5-63.6-76.8-217-14.6-41.3-27-76.2-27.5-77.8l-1-2.8H-322v.1z"
               />
-              <path
+              <motion.path
                 id="path5721"
                 d="M-322-412.8l150.5 426.5v-.2l11.9 33.6C-93.5 234.2-58 334.6-57.8 334.8c.1.1 10.1.7 22.2 1.3 36.6 1.8 82 5.7 116.5 10 7.9 1 14.8 1.5 15.2 1.1L-53.1-76.4v.1l-13.8-39c-13.5-38.1-22.5-63.6-76.8-217-14.6-41.3-27-76.2-27.5-77.8l-1-2.8h-74.9l-74.9.1z"
               />

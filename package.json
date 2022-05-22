@@ -56,5 +56,6 @@
   "devDependencies": {
     "@types/react-helmet": "^6.1.5",
     "@types/styled-components": "^5.1.25"
-  }
+  },
+  "homepage": "http://chuhongkyu.github.io/chuflix"
 }

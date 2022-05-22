@@ -1,5 +1,5 @@
 import { motion, AnimatePresence, useViewportScroll } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "react-query";
 import styled from "styled-components";
 import {
@@ -7,7 +7,6 @@ import {
   getTopRatedM,
   getUpComingM,
   IGetMoviesResult,
-  IMovie,
 } from "../api";
 import Header from "../Components/Header";
 import Loader from "../Components/Loader";

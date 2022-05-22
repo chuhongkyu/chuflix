@@ -185,7 +185,6 @@ function Header() {
               Enter{enterMatch && <LineNav layoutId="lineNav" />}
             </Link>
           </Item>
-          <Item>My List</Item>
         </Items>
       </Col>
       <Col>

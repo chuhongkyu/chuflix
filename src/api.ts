@@ -1,6 +1,7 @@
 const API_KEY = "26cb645f6c566526c5c888f00d431e35";
 const BASE_PATH = "https://api.themoviedb.org/3/";
 
+//Movie
 export interface IMovie {
   adult: boolean;
   backdrop_path: string;
@@ -11,6 +12,7 @@ export interface IMovie {
   release_date: string;
 }
 
+//movie Data
 export interface IGetMoviesResult {
   dates: {
     maximum: string;
@@ -22,7 +24,7 @@ export interface IGetMoviesResult {
   total_results: number;
 }
 
-interface ITv {
+export interface ITv {
   backdrop_path: string;
   poster_path: string;
   id: number;

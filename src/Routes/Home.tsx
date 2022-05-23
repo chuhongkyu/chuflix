@@ -1,5 +1,5 @@
 import { motion, AnimatePresence, useViewportScroll } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import styled from "styled-components";
 import {
@@ -7,12 +7,13 @@ import {
   getTopRatedM,
   getUpComingM,
   IGetMoviesResult,
+  IMovie,
 } from "../api";
 import Header from "../Components/Header";
 import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
 import MovieHover from "../Components/MovieHover";
-import { useMatch, useNavigate } from "react-router-dom";
+import { PathMatch, useMatch, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
 const Wrapper = styled.div`
@@ -93,6 +94,7 @@ const Row = styled(motion.div)`
 `;
 
 const Movie = styled(motion.div)<{ bgPhoto: string }>`
+  background-color: ${(props) => props.theme.black.darker};
   background-image: url(${(props) => props.bgPhoto});
   background-size: cover;
   background-position: center center;
@@ -228,16 +230,17 @@ const offset = 6;
 
 function Home() {
   const navigate = useNavigate();
-  const bigMovieMatch = useMatch("/movies/:movieId");
+  const moviePathMatch: PathMatch<"type" | "id"> | null =
+    useMatch("/movies/:type/:id");
   const { scrollY } = useViewportScroll();
 
   const { data: nowPlayingData, isLoading: nowPlayingLoading } =
     useQuery<IGetMoviesResult>(["movie", "nowPlaying"], getMovies);
   const { data: topRatedData, isLoading: topRatedLoading } =
     useQuery<IGetMoviesResult>(["movie", "topRated"], getTopRatedM);
-  const { data: upcomingData, isLoading: upcomingLoading } =
-    useQuery<IGetMoviesResult>(["movie", "upcoming"], getUpComingM);
-
+  const { data: upComingData, isLoading: upComingLoading } =
+    useQuery<IGetMoviesResult>(["movie", "upComing"], getUpComingM);
+  const [movieData, setMovieData] = useState<IMovie | undefined>(undefined);
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const increaseIndex = () => {
@@ -250,35 +253,46 @@ function Home() {
     }
   };
   const toggleLeaving = () => setLeaving((prev) => !prev);
-  const onMovieClicked = (movieId: number) => {
-    navigate(`/movies/${movieId}`);
-  };
   const onOverlayClick = () => {
     navigate("/");
   };
-  const clickedMovie =
-    bigMovieMatch?.params.movieId &&
-    nowPlayingData?.results.find(
-      (movie) => movie.id + "" === bigMovieMatch.params.movieId
-    );
-  const clickedTopMovie =
-    bigMovieMatch?.params.movieId &&
-    topRatedData?.results.find(
-      (movie) => movie.id + "" === bigMovieMatch.params.movieId
-    );
-  const clickedUpComMovie =
-    bigMovieMatch?.params.movieId &&
-    upcomingData?.results.find(
-      (movie) => movie.id + "" === bigMovieMatch.params.movieId
-    );
+
+  const onMovieClicked = (type: string, movieId: number): void => {
+    navigate(`/movies/${type}/${movieId}`);
+  };
+
+  useEffect(() => {
+    let result: IMovie | undefined;
+
+    if (moviePathMatch?.params.type === "nowPlaying") {
+      result = nowPlayingData?.results.find(
+        (movie: IMovie) => String(movie.id) === moviePathMatch?.params.id
+      );
+    } else if (moviePathMatch?.params.type === "topRated") {
+      result = topRatedData?.results.find(
+        (movie: IMovie) => String(movie.id) === moviePathMatch?.params.id
+      );
+    } else if (moviePathMatch?.params.type === "upComing") {
+      result = upComingData?.results.find(
+        (movie: IMovie) => String(movie.id) === moviePathMatch?.params.id
+      );
+    }
+
+    setMovieData(result);
+  }, [
+    moviePathMatch,
+    nowPlayingData?.results,
+    topRatedData?.results,
+    upComingData?.results,
+  ]);
 
   return (
     <Wrapper>
-      {nowPlayingLoading || topRatedLoading || upcomingLoading ? (
+      <Header></Header>
+      {nowPlayingLoading || topRatedLoading || upComingLoading ? (
         <Loader></Loader>
       ) : (
         <>
-          <Header></Header>
           <Helmet>
             <title>NEFLIX Movie</title>
           </Helmet>
@@ -314,14 +328,14 @@ function Home() {
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Movie
-                      layoutId={movie.id + ""}
+                      layoutId={`nowPlaying/${movie.id}`}
                       key={movie.id}
                       whileHover="hover"
                       initial="normal"
                       variants={movieVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
-                      onClick={() => onMovieClicked(movie.id)}
+                      onClick={() => onMovieClicked("nowPlaying", movie.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -339,47 +353,6 @@ function Home() {
               </Row>
             </AnimatePresence>
           </Slider>
-
-          <AnimatePresence>
-            {bigMovieMatch ? (
-              <>
-                <Overlay
-                  onClick={onOverlayClick}
-                  exit={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-                <ModalMovie
-                  layoutId={bigMovieMatch.params.movieId}
-                  style={{ top: scrollY.get() + 100 }}
-                >
-                  {clickedMovie && (
-                    <>
-                      <ModalCover
-                        style={{
-                          backgroundImage: `url(${makeImagePath(
-                            clickedMovie.backdrop_path,
-                            "w500"
-                          )})`,
-                        }}
-                      >
-                        <ModalBtn>▶️ Play</ModalBtn>
-                        <ModalCloseBtn onClick={onOverlayClick}>
-                          ✖️
-                        </ModalCloseBtn>
-                      </ModalCover>
-                      <ModalTitle>{clickedMovie.title}</ModalTitle>
-                      <ModalOverview>
-                        {clickedMovie.overview.length < 300
-                          ? clickedMovie.overview
-                          : clickedMovie.overview.substring(0, 300) + "..."}
-                      </ModalOverview>
-                      <hr />
-                    </>
-                  )}
-                </ModalMovie>
-              </>
-            ) : null}
-          </AnimatePresence>
 
           <Slider>
             <h1>Top Rated</h1>
@@ -397,14 +370,14 @@ function Home() {
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Movie
-                      layoutId={movie.id + ""}
+                      layoutId={`topRated/${movie.id}`}
                       key={movie.id}
                       whileHover="hover"
                       initial="normal"
                       variants={movieVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
-                      onClick={() => onMovieClicked(movie.id)}
+                      onClick={() => onMovieClicked("topRated", movie.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -422,47 +395,6 @@ function Home() {
               </Row>
             </AnimatePresence>
           </Slider>
-
-          <AnimatePresence>
-            {bigMovieMatch ? (
-              <>
-                <Overlay
-                  onClick={onOverlayClick}
-                  exit={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-                <ModalMovie
-                  layoutId={bigMovieMatch.params.movieId}
-                  style={{ top: scrollY.get() + 100 }}
-                >
-                  {clickedTopMovie && (
-                    <>
-                      <ModalCover
-                        style={{
-                          backgroundImage: `url(${makeImagePath(
-                            clickedTopMovie.backdrop_path,
-                            "w500"
-                          )})`,
-                        }}
-                      >
-                        <ModalBtn>▶️ Play</ModalBtn>
-                        <ModalCloseBtn onClick={onOverlayClick}>
-                          ✖️
-                        </ModalCloseBtn>
-                      </ModalCover>
-                      <ModalTitle>{clickedTopMovie.title}</ModalTitle>
-                      <ModalOverview>
-                        {clickedTopMovie.overview.length < 300
-                          ? clickedTopMovie.overview
-                          : clickedTopMovie.overview.substring(0, 300) + "..."}
-                      </ModalOverview>
-                      <hr />
-                    </>
-                  )}
-                </ModalMovie>
-              </>
-            ) : null}
-          </AnimatePresence>
 
           <Slider>
             <h1>Up Coming</h1>
@@ -475,19 +407,19 @@ function Home() {
                 transition={{ type: "tween", duration: 1 }}
                 key={index}
               >
-                {upcomingData?.results
+                {upComingData?.results
                   .slice(1)
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Movie
-                      layoutId={movie.id + ""}
+                      layoutId={`upComing/${movie.id}`}
                       key={movie.id}
                       whileHover="hover"
                       initial="normal"
                       variants={movieVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w400" || "")}
-                      onClick={() => onMovieClicked(movie.id)}
+                      onClick={() => onMovieClicked("upComing", movie.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -507,7 +439,7 @@ function Home() {
           </Slider>
 
           <AnimatePresence>
-            {bigMovieMatch ? (
+            {moviePathMatch ? (
               <>
                 <Overlay
                   onClick={onOverlayClick}
@@ -515,15 +447,15 @@ function Home() {
                   animate={{ opacity: 1 }}
                 />
                 <ModalMovie
-                  layoutId={bigMovieMatch.params.movieId}
+                  layoutId={`${moviePathMatch.params.type}/${moviePathMatch.params.id}`}
                   style={{ top: scrollY.get() + 100 }}
                 >
-                  {clickedUpComMovie && (
+                  {movieData && (
                     <>
                       <ModalCover
                         style={{
                           backgroundImage: `url(${makeImagePath(
-                            clickedUpComMovie.backdrop_path,
+                            movieData.backdrop_path,
                             "w500"
                           )})`,
                         }}
@@ -533,12 +465,11 @@ function Home() {
                           ✖️
                         </ModalCloseBtn>
                       </ModalCover>
-                      <ModalTitle>{clickedUpComMovie.title}</ModalTitle>
+                      <ModalTitle>{movieData.title}</ModalTitle>
                       <ModalOverview>
-                        {clickedUpComMovie.overview.length < 300
-                          ? clickedUpComMovie.overview
-                          : clickedUpComMovie.overview.substring(0, 300) +
-                            "..."}
+                        {movieData.overview.length < 300
+                          ? movieData.overview
+                          : movieData.overview.substring(0, 300) + "..."}
                       </ModalOverview>
                       <hr />
                     </>

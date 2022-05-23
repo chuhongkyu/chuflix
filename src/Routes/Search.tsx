@@ -155,11 +155,11 @@ function Search() {
   const toggleLeaving = () => setLeaving((prev) => !prev);
   return (
     <Wrapper>
+      <Header></Header>
       {isLoading ? (
         <Loader></Loader>
       ) : (
         <>
-          <Header></Header>
           <Helmet>
             <title>{data?.results[0].original_title.substring(0, 10)}</title>
           </Helmet>

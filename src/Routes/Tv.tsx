@@ -8,13 +8,15 @@ import {
   getPopularTv,
   getTopRatedTv,
   ITvResult,
+  ITv,
 } from "../api";
 import Header from "../Components/Header";
 import Loader from "../Components/Loader";
 import { makeImagePath } from "../Utils/utils";
-import { useMatch, useNavigate } from "react-router-dom";
+import { PathMatch, useMatch, useNavigate } from "react-router-dom";
 import MovieHover from "../Components/MovieHover";
 import { Helmet } from "react-helmet";
+import { useEffect } from "react";
 
 const Wrapper = styled.div`
   background-color: ${(props) => props.theme.black.veryDark};
@@ -229,7 +231,8 @@ const offset = 6;
 
 function Tv() {
   const navigate = useNavigate();
-  const bigTvProgramMatch = useMatch("/tv/:tvId");
+  const bigTvProgramMatch: PathMatch<"type" | "tvid"> | null =
+    useMatch("/tv/:type/:tvid");
 
   const { scrollY } = useViewportScroll();
 
@@ -248,6 +251,7 @@ function Tv() {
   const { data: topRatedData, isLoading: topRatedLoading } =
     useQuery<ITvResult>(["tv", "topRated"], getTopRatedTv);
 
+  const [tvData, setTvData] = useState<ITv | undefined>(undefined);
   const [index, setIndex] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const increaseIndex = () => {
@@ -260,32 +264,46 @@ function Tv() {
     }
   };
   const toggleLeaving = () => setLeaving((prev) => !prev);
-  const onTvProgramClicked = (tvId: number) => {
-    navigate(`/tv/${tvId}`);
+  const onTvProgramClicked = (type: string, tvId: number) => {
+    navigate(`/tv/${type}/${tvId}`);
   };
   const onOverlayClick = () => {
     navigate("/tv");
   };
-  const clickedTvProgram =
-    bigTvProgramMatch?.params.tvId &&
-    lastestData?.results.find(
-      (tv) => tv.id + "" === bigTvProgramMatch.params.tvId
-    );
-  const clickedTvAir =
-    bigTvProgramMatch?.params.tvId &&
-    airData?.results.find((tv) => tv.id + "" === bigTvProgramMatch.params.tvId);
-  const clickedTvPopular =
-    bigTvProgramMatch?.params.tvId &&
-    popularData?.results.find(
-      (tv) => tv.id + "" === bigTvProgramMatch.params.tvId
-    );
-  const clickedTvTopRated =
-    bigTvProgramMatch?.params.tvId &&
-    topRatedData?.results.find(
-      (tv) => tv.id + "" === bigTvProgramMatch.params.tvId
-    );
+
+  useEffect(() => {
+    let result: ITv | undefined;
+
+    if (bigTvProgramMatch?.params.type === "lastest") {
+      result = lastestData?.results.find(
+        (tv: ITv) => String(tv.id) === bigTvProgramMatch?.params.tvid
+      );
+    } else if (bigTvProgramMatch?.params.type === "airPlaying") {
+      result = airData?.results.find(
+        (tv: ITv) => String(tv.id) === bigTvProgramMatch?.params.tvid
+      );
+    } else if (bigTvProgramMatch?.params.type === "popular") {
+      result = popularData?.results.find(
+        (tv: ITv) => String(tv.id) === bigTvProgramMatch?.params.tvid
+      );
+    } else if (bigTvProgramMatch?.params.type === "topRated") {
+      result = topRatedData?.results.find(
+        (tv: ITv) => String(tv.id) === bigTvProgramMatch?.params.tvid
+      );
+    }
+
+    setTvData(result);
+  }, [
+    bigTvProgramMatch,
+    lastestData?.results,
+    airData?.results,
+    popularData?.results,
+    topRatedData?.results,
+  ]);
+
   return (
     <Wrapper>
+      <Header></Header>
       {lastestLoading || airLoading || popularLoading || topRatedLoading ? (
         <Loader></Loader>
       ) : (
@@ -324,14 +342,14 @@ function Tv() {
                   .slice(offset * index, offset * index + offset)
                   .map((tv) => (
                     <TvProgram
-                      layoutId={tv.id + ""}
+                      layoutId={`lastest/${tv.id}`}
                       key={tv.id}
                       whileHover="hover"
                       initial="normal"
                       variants={TvProgramVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(tv.backdrop_path, "w400" || "")}
-                      onClick={() => onTvProgramClicked(tv.id)}
+                      onClick={() => onTvProgramClicked("lastest", tv.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -349,47 +367,6 @@ function Tv() {
               </Row>
             </AnimatePresence>
           </Slider>
-
-          <AnimatePresence>
-            {bigTvProgramMatch ? (
-              <>
-                <Overlay
-                  onClick={onOverlayClick}
-                  exit={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-                <ModalTvProgram
-                  layoutId={bigTvProgramMatch.params.tvId}
-                  style={{ top: scrollY.get() + 100 }}
-                >
-                  {clickedTvProgram && (
-                    <>
-                      <ModalCover
-                        style={{
-                          backgroundImage: `url(${makeImagePath(
-                            clickedTvProgram.backdrop_path,
-                            "w500"
-                          )})`,
-                        }}
-                      >
-                        <ModalBtn>▶️ Play</ModalBtn>
-                        <ModalCloseBtn onClick={onOverlayClick}>
-                          ✖️
-                        </ModalCloseBtn>
-                      </ModalCover>
-                      <ModalTitle>{clickedTvProgram.name}</ModalTitle>
-                      <ModalOverview>
-                        {clickedTvProgram.overview.length < 300
-                          ? clickedTvProgram.overview
-                          : clickedTvProgram.overview.substring(0, 300) + "..."}
-                      </ModalOverview>
-                      <hr />
-                    </>
-                  )}
-                </ModalTvProgram>
-              </>
-            ) : null}
-          </AnimatePresence>
 
           <Slider>
             <h1>Air Playing</h1>
@@ -407,14 +384,14 @@ function Tv() {
                   .slice(offset * index, offset * index + offset)
                   .map((tv) => (
                     <TvProgram
-                      layoutId={tv.id + ""}
+                      layoutId={`airPlaying/${tv.id}`}
                       key={tv.id}
                       whileHover="hover"
                       initial="normal"
                       variants={TvProgramVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(tv.backdrop_path, "w400" || "")}
-                      onClick={() => onTvProgramClicked(tv.id)}
+                      onClick={() => onTvProgramClicked("airPlaying", tv.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -432,47 +409,6 @@ function Tv() {
               </Row>
             </AnimatePresence>
           </Slider>
-
-          <AnimatePresence>
-            {bigTvProgramMatch ? (
-              <>
-                <Overlay
-                  onClick={onOverlayClick}
-                  exit={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-                <ModalTvProgram
-                  layoutId={bigTvProgramMatch.params.tvId}
-                  style={{ top: scrollY.get() + 100 }}
-                >
-                  {clickedTvAir && (
-                    <>
-                      <ModalCover
-                        style={{
-                          backgroundImage: `url(${makeImagePath(
-                            clickedTvAir.backdrop_path,
-                            "w500"
-                          )})`,
-                        }}
-                      >
-                        <ModalBtn>▶️ Play</ModalBtn>
-                        <ModalCloseBtn onClick={onOverlayClick}>
-                          ✖️
-                        </ModalCloseBtn>
-                      </ModalCover>
-                      <ModalTitle>{clickedTvAir.name}</ModalTitle>
-                      <ModalOverview>
-                        {clickedTvAir.overview.length < 300
-                          ? clickedTvAir.overview
-                          : clickedTvAir.overview.substring(0, 300) + "..."}
-                      </ModalOverview>
-                      <hr />
-                    </>
-                  )}
-                </ModalTvProgram>
-              </>
-            ) : null}
-          </AnimatePresence>
 
           <Slider>
             <h1>Popular</h1>
@@ -490,14 +426,14 @@ function Tv() {
                   .slice(offset * index, offset * index + offset)
                   .map((tv) => (
                     <TvProgram
-                      layoutId={tv.id + ""}
+                      layoutId={`popular/${tv.id}`}
                       key={tv.id}
                       whileHover="hover"
                       initial="normal"
                       variants={TvProgramVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(tv.backdrop_path, "w400" || "")}
-                      onClick={() => onTvProgramClicked(tv.id)}
+                      onClick={() => onTvProgramClicked("popular", tv.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -515,47 +451,6 @@ function Tv() {
               </Row>
             </AnimatePresence>
           </Slider>
-
-          <AnimatePresence>
-            {bigTvProgramMatch ? (
-              <>
-                <Overlay
-                  onClick={onOverlayClick}
-                  exit={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                />
-                <ModalTvProgram
-                  layoutId={bigTvProgramMatch.params.tvId}
-                  style={{ top: scrollY.get() + 100 }}
-                >
-                  {clickedTvPopular && (
-                    <>
-                      <ModalCover
-                        style={{
-                          backgroundImage: `url(${makeImagePath(
-                            clickedTvPopular.backdrop_path,
-                            "w500"
-                          )})`,
-                        }}
-                      >
-                        <ModalBtn>▶️ Play</ModalBtn>
-                        <ModalCloseBtn onClick={onOverlayClick}>
-                          ✖️
-                        </ModalCloseBtn>
-                      </ModalCover>
-                      <ModalTitle>{clickedTvPopular.name}</ModalTitle>
-                      <ModalOverview>
-                        {clickedTvPopular.overview.length < 300
-                          ? clickedTvPopular.overview
-                          : clickedTvPopular.overview.substring(0, 300) + "..."}
-                      </ModalOverview>
-                      <hr />
-                    </>
-                  )}
-                </ModalTvProgram>
-              </>
-            ) : null}
-          </AnimatePresence>
 
           <Slider>
             <h1>TopRated</h1>
@@ -573,14 +468,14 @@ function Tv() {
                   .slice(offset * index, offset * index + offset)
                   .map((tv) => (
                     <TvProgram
-                      layoutId={tv.id + ""}
+                      layoutId={`topRated/${tv.id}`}
                       key={tv.id}
                       whileHover="hover"
                       initial="normal"
                       variants={TvProgramVariants}
                       transition={{ type: "tween" }}
                       bgPhoto={makeImagePath(tv.backdrop_path, "w400" || "")}
-                      onClick={() => onTvProgramClicked(tv.id)}
+                      onClick={() => onTvProgramClicked("topRated", tv.id)}
                     >
                       <Info variants={infoVariants}>
                         <MovieHover
@@ -608,15 +503,15 @@ function Tv() {
                   animate={{ opacity: 1 }}
                 />
                 <ModalTvProgram
-                  layoutId={bigTvProgramMatch.params.tvId}
+                  layoutId={bigTvProgramMatch.params.tvid}
                   style={{ top: scrollY.get() + 100 }}
                 >
-                  {clickedTvTopRated && (
+                  {tvData && (
                     <>
                       <ModalCover
                         style={{
                           backgroundImage: `url(${makeImagePath(
-                            clickedTvTopRated.backdrop_path,
+                            tvData.backdrop_path,
                             "w500"
                           )})`,
                         }}
@@ -626,12 +521,11 @@ function Tv() {
                           ✖️
                         </ModalCloseBtn>
                       </ModalCover>
-                      <ModalTitle>{clickedTvTopRated.name}</ModalTitle>
+                      <ModalTitle>{tvData.name}</ModalTitle>
                       <ModalOverview>
-                        {clickedTvTopRated.overview.length < 300
-                          ? clickedTvTopRated.overview
-                          : clickedTvTopRated.overview.substring(0, 300) +
-                            "..."}
+                        {tvData.overview.length < 300
+                          ? tvData.overview
+                          : tvData.overview.substring(0, 300) + "..."}
                       </ModalOverview>
                       <hr />
                     </>

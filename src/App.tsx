@@ -10,9 +10,9 @@ function App() {
       <BrowserRouter basename={process.env.PUBLIC_URL}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/movies/:id" element={<Home />} />
+          <Route path="/movies/:type/:id" element={<Home />} />
           <Route path="/tv" element={<Tv />} />
-          <Route path="/tv/:id" element={<Tv />} />
+          <Route path="/tv/:type/:tvid" element={<Tv />} />
           <Route path="/search" element={<Search />} />
           <Route path="/enter" element={<Enter />} />
         </Routes>

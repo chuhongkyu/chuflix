@@ -137,6 +137,9 @@ function Search() {
   const [search, setSearch] = useState(keyword);
   useEffect(() => {
     setSearch(keyword);
+    if (!keyword) {
+      setSearch("dune");
+    }
   }, [keyword]);
   const { data, isLoading } = useQuery<ISearchResult>(["multi", search], () =>
     getSearch(search)

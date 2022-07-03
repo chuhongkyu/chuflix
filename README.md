@@ -1,5 +1,7 @@
 # chuflix
 
+- homepage: "http://chuhongkyu.github.io/chuflix"
+
 - It's Netflix clone coding.
 - My first TS project
 - Page Configuration

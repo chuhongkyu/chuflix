@@ -108,10 +108,10 @@ interface IForm {
 
 function Header() {
   const [searchOpen, setSerachOpen] = useState(false);
-  const homeMatch = useMatch("/");
+  const homeMatch = useMatch("/home");
   const tvMatch = useMatch("/tv");
   const searchMatch = useMatch("/search");
-  const enterMatch = useMatch("/enter");
+  const enterMatch = useMatch("/");
   const inputAnimation = useAnimation();
   const navAnimation = useAnimation();
   const { scrollY } = useViewportScroll();
@@ -164,7 +164,7 @@ function Header() {
 
         <Items>
           <Item>
-            <Link to="/">
+            <Link to="/home">
               Home{homeMatch && <LineNav layoutId="lineNav" />}
             </Link>
           </Item>
@@ -181,7 +181,7 @@ function Header() {
             Search{searchMatch && <LineNav layoutId="lineNav" />}
           </Item>
           <Item>
-            <Link to="/enter">
+            <Link to="/">
               Enter{enterMatch && <LineNav layoutId="lineNav" />}
             </Link>
           </Item>

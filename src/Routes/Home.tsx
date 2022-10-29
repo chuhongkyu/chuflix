@@ -230,8 +230,9 @@ const offset = 6;
 
 function Home() {
   const navigate = useNavigate();
-  const moviePathMatch: PathMatch<"type" | "id"> | null =
-    useMatch("/movies/:type/:id");
+  const moviePathMatch: PathMatch<"type" | "id"> | null = useMatch(
+    "/home/movies/:type/:id"
+  );
   const { scrollY } = useViewportScroll();
 
   const { data: nowPlayingData, isLoading: nowPlayingLoading } =

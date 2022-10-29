@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useQuery } from "react-query";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { getMovies } from "../api";
 import Loader from "../Components/Loader";
@@ -24,7 +26,12 @@ const Svg = styled(motion.svg)``;
 
 function Enter() {
   const { data, isLoading } = useQuery(["moviex", "nowPlaying"], getMovies);
+  const navigate = useNavigate();
   console.log(data, isLoading);
+  useEffect(() => {
+    const timer = setTimeout(() => navigate("/home"), 7000);
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <>
       {isLoading ? (
